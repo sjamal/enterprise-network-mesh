@@ -18,4 +18,16 @@ Our networks are partitioned across strict lifecycle staging tiers to safeguard 
 - **Cross-Boundary Routing:** Orchestrated using Site-to-Site (S2S) IPsec VPN tunnels establishing cross-platform state sharing.
 - **Cross-Platform Routing Mesh:** Secure site-to-site VPN networks bridge secure local virtual instances with cloud-native application environments.
 
+## Repository Component Matrix
+- **playbooks/bootstrap_vms.yml:** Configures static interface configurations across SLES networks.
+- **playbooks/audit_network_drift.yml:** Evaluates active segment settings against state records.
+- **scripts/validate_cisco_context.py:** Parses firewall contexts to identify security anomalies.
+- **architecture-diagrams/:** Directory hosting logical system network maps.
 
+## Executing Context Validation Audits
+To inspect Cisco context parameters for rule anomalies before staging modifications, run the validation tool using the command line syntax below:
+
+```bash
+# Execute the compliance scanner against a context configuration file
+python scripts/validate_cisco_context.py "configs/border-dmz-context.cfg"
+```

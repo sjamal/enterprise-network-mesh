@@ -1,0 +1,11 @@
+# ==============================================================================
+# Gitignore Profile: Architectural Design & Network Layouts
+# ==============================================================================
+
+# Deny temporary cache folders from graphics processing tools
+.lucid_cache/
+*.tmp
+
+# Allow structural vector/image outputs explicitly, ignore raw platform application links
+!*.png
+!*.svg
