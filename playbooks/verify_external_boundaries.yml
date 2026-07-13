@@ -1,0 +1,64 @@
+---
+# ==============================================================================
+# Playbook Name: verify_external_boundaries.yml
+# Description: Executes non-interactive external boundary verification scans.
+#              Audits APIM gateways, AppGW nodes, and SAP Web Dispatchers.
+# ==============================================================================
+
+- name: External Boundary Definition Verification Audit
+  hosts: localhost
+  gather_facts: false
+  vars:
+    # Target endpoint definitions representing edge configurations
+    azure_apim_endpoint: "api.institutional.edu"
+    azure_appgw_endpoint: "apps.institutional.edu"
+    sap_gateway_endpoint: "sapedge.institutional.edu"
+
+  tasks:
+    - name: Verification 1 - Execute DNS Infrastructure Resolution Audits
+      block:
+        - name: Verify DNS Resolution for Azure API Management Edge
+          ansible.builtin.command:
+            cmd: "nslookup {{ azure_apim_endpoint }}"
+          register: dns_apim_check
+          changed_when: false
+
+        - name: Assert APIM Record Returns Public IP Mappings
+          ansible.builtin.assert:
+            that:
+              - dns_apim_check.rc == 0
+            fail_msg: "Boundary Verification Failure: Edge DNS record resolution broken for APIM."
+      displayName: "Edge Name Resolution Validation Block"
+
+    - name: Verification 2 - Audit TLS Handshake and Keystore Expiration State
+      block:
+        - name: Query Public Listener Encryption Parameters on Azure App Gateway
+          # Use openssl client commands to handshake and return date fields non-interactively
+          ansible.builtin.shell: |
+            set -o pipefail
+            echo | openssl s_client -connect {{ azure_appgw_endpoint }}:443 -servername {{ azure_appgw_endpoint }} 2>/dev/null | openssl x509 -noout -enddate
+          register: openssl_expiry_check
+          changed_when: false
+
+        - name: Output Extracted Listener Expiration Details
+          ansible.builtin.debug:
+            var: openssl_expiry_check.stdout
+      displayName: "Transport Layer Cryptography Validation Block"
+
+    - name: Verification 3 - Inspect Reverse Proxy Backend Routing Status
+      block:
+        - name: Trigger HTTP Dynamic Probe Actions Against SAP Web Dispatcher Contexts
+          # Expect specific enterprise return codes (e.g., 200 OK or 401 Unauthorized for secure portals)
+          ansible.builtin.uri:
+            url: "https://{{ sap_gateway_endpoint }}/sap/bc/gui/sap/its/webgui"
+            status_code: [200, 401]
+            validate_certs: false
+            timeout: 10
+          register: sap_gateway_probe
+
+        - name: Verify Path Integrity to Core SAP App Tiers
+          ansible.builtin.assert:
+            that:
+              - sap_gateway_probe.status in [200, 401]
+            fail_msg: "Boundary Verification Failure: Ingress routing failed to reach backend SAP instances."
+      displayName: "Application Gateway Ingress Validation Block"

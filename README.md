@@ -2,7 +2,7 @@
 
 This repository outlines sample cross-platform logical network routing, segmentation policies, and environment matrices governing on-premises and cloud infrastructures.
 
-It houses the structural controls, automated access policies, cisco configuration analysis tools, and architectural flow blueprints that govern communications across hybrid infrastructure boundaries.
+It houses the structural controls, automated access policies, cisco configuration analysis tools, and architectural flow blueprints and boundary verification assets that govern communications across hybrid infrastructure boundaries.
 
 ## Network Architecture Matrix
 
@@ -38,6 +38,7 @@ To isolate components, networks are partitioned across strict lifecycle staging 
 ## Repository Component Matrix
 - **playbooks/bootstrap_vms.yml:** Configures static interface configurations across SLES networks.
 - **playbooks/audit_network_drift.yml:** Evaluates active segment settings against state records.
+- **playbooks/verify_external_boundaries.yml:** Standalone verification workbook validating external APIM, AppGW, and SAP gateway perimeters.
 - **scripts/validate_cisco_context.py:** Parses firewall contexts to identify security anomalies.
 - **architecture-diagrams/:** Directory hosting logical system network maps.
 
@@ -47,4 +48,12 @@ To inspect Cisco context parameters for rule anomalies before staging modificati
 ```bash
 # Execute the compliance scanner against a context configuration file
 python scripts/validate_cisco_context.py "configs/border-dmz-context.cfg"
+```
+
+## Running External Boundary Verification Tests
+To run non-interactive perimeters audits checking DNS status, certificate handshake parameters, and backend edge connectivity across ingress layers, execute the verification script below:
+
+```bash
+# Trigger the automated boundary validation workbook via Ansible core
+ansible-playbook playbooks/verify_external_boundaries.yml
 ```
