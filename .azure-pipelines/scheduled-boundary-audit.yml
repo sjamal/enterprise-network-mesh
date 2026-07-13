@@ -1,23 +1,21 @@
 # ==============================================================================
 # Pipeline Name: scheduled-boundary-audit.yml
 # Description: Scheduled cron execution tracking framework running automated 
-#              perimeter audits, TLS handshakes, and hybrid tunnel checks.
+#              perimeter audits with dynamic Azure Key Vault secrets mapping.
 # ==============================================================================
 
 name: Scheduled_Boundary_Audit_$(Date:yyyyMMdd)$(Rev:.r)
 
-# Terminate automatic commit-driven triggers to restrict operations to schedules
 trigger: none
 pr: none
 
-# Configure recurring cron policies to verify boundaries at regular intervals
 schedules:
-  - cron: "0 */4 * * *" # Execute validation audits every 4 hours, daily
+  - cron: "0 */4 * * *"
     displayName: "Four-Hour Continuous Perimeter Governance Loop"
     branches:
       include:
         - main
-    always: true # Run even if no new code commits have been registered
+    always: true
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -27,6 +25,8 @@ variables:
     value: '3.11'
   - name: ansible_version
     value: '2.15'
+  # The Variable Group acts as the metadata layer linking the pipeline to the Vault
+  - group: 'inst-prod-network-secrets-vg' 
 
 stages:
   - stage: PerimeterAudit
@@ -45,7 +45,6 @@ stages:
               pip install ansible
             displayName: 'Provision Operational Prerequisites'
 
-          # Trigger the core verification playbooks validating edge mappings
           - script: |
               ansible-playbook playbooks/verify_external_boundaries.yml
             displayName: 'Run External Boundary Ingress Audit Playbook'
@@ -53,7 +52,7 @@ stages:
   - stage: TunnelTransitAudit
     displayName: 'Hybrid Cross-Premises Transit Checks'
     dependsOn: PerimeterAudit
-    condition: always() # Ensure tunnel monitoring proceeds even if edge web probes trigger warnings
+    condition: always()
     jobs:
       - job: ValidateVPNLinks
         displayName: 'Test S2S IPsec Infrastructure'
@@ -62,9 +61,20 @@ stages:
             inputs:
               versionSpec: '$(python_version)'
 
+          # AKV Access Configuration Block: Authenticates via Azure Service Connection
+          # Downloads the required network variables directly into encrypted runner memory
+          - task: AzureKeyVault@2
+            inputs:
+              azureSubscription: 'inst-azure-ops-service-connection'
+              KeyVaultName: 'kv-prd-cae-ops-01'
+              SecretsFilter: 'SECURE-REMOTE-GATEWAY-IP'
+              RunAsPreJob: true
+            displayName: 'Execute Secure Key Vault Access Block Handoff'
+
           # Execute the standalone cross-premises tunnel tracking scripts
+          # Note: Azure DevOps auto-maps 'SECURE-REMOTE-GATEWAY-IP' secret to a local environment variable
           - script: |
               python scripts/verify_vpn_tunnel.py
             displayName: 'Run S2S VPN Path Connectivity Verification'
             env:
-              VPN_TARGET_GATEWAY_IP: $(SECURE_REMOTE_GATEWAY_IP) # Loaded securely via variable groups
+              VPN_TARGET_GATEWAY_IP: $(SECURE-REMOTE-GATEWAY-IP)
