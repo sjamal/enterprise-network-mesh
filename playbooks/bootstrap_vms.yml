@@ -1,0 +1,31 @@
+---
+- name: Hybrid Environment System Interface Configuration
+  hosts: enterprise_nodes
+  gather_facts: true
+  vars:
+    network_profile: "tier1_app" # Options: tier0_db, tier1_app, tier2_dmz
+    firewall_tier: "isolated"
+
+  tasks:
+    - name: Evaluate Active Security Context Profiles
+      ansible.builtin.debug:
+        msg: "Applying logical network routing constraints for Zone: {{ network_profile }}"
+
+    - name: Establish Host Persistent Static Routing Guidelines
+      ansible.builtin.template:
+        src: network_interface.j2
+        dest: "/etc/sysconfig/network/ifroute-eth0"
+        owner: root
+        group: root
+        mode: '0644'
+      when: ansible_os_family == 'Suse'
+
+    - name: Configure Edge Subnet Policies
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_port: 22
+        source: "10.0.0.0/8"
+        jump: ACCEPT
+      displayName: 'Enforce Administrative Ingress Network Segment Alignment'
+
