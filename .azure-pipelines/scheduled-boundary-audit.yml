@@ -1,0 +1,70 @@
+# ==============================================================================
+# Pipeline Name: scheduled-boundary-audit.yml
+# Description: Scheduled cron execution tracking framework running automated 
+#              perimeter audits, TLS handshakes, and hybrid tunnel checks.
+# ==============================================================================
+
+name: Scheduled_Boundary_Audit_$(Date:yyyyMMdd)$(Rev:.r)
+
+# Terminate automatic commit-driven triggers to restrict operations to schedules
+trigger: none
+pr: none
+
+# Configure recurring cron policies to verify boundaries at regular intervals
+schedules:
+  - cron: "0 */4 * * *" # Execute validation audits every 4 hours, daily
+    displayName: "Four-Hour Continuous Perimeter Governance Loop"
+    branches:
+      include:
+        - main
+    always: true # Run even if no new code commits have been registered
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  - name: python_version
+    value: '3.11'
+  - name: ansible_version
+    value: '2.15'
+
+stages:
+  - stage: PerimeterAudit
+    displayName: 'External Ingress Boundary Audits'
+    jobs:
+      - job: RunBoundaryPlaybook
+        displayName: 'Execute Verification Manuals'
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '$(python_version)'
+            displayName: 'Bind Python Runtime Layer'
+
+          - script: |
+              python -m pip install --upgrade pip
+              pip install ansible
+            displayName: 'Provision Operational Prerequisites'
+
+          # Trigger the core verification playbooks validating edge mappings
+          - script: |
+              ansible-playbook playbooks/verify_external_boundaries.yml
+            displayName: 'Run External Boundary Ingress Audit Playbook'
+
+  - stage: TunnelTransitAudit
+    displayName: 'Hybrid Cross-Premises Transit Checks'
+    dependsOn: PerimeterAudit
+    condition: always() # Ensure tunnel monitoring proceeds even if edge web probes trigger warnings
+    jobs:
+      - job: ValidateVPNLinks
+        displayName: 'Test S2S IPsec Infrastructure'
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '$(python_version)'
+
+          # Execute the standalone cross-premises tunnel tracking scripts
+          - script: |
+              python scripts/verify_vpn_tunnel.py
+            displayName: 'Run S2S VPN Path Connectivity Verification'
+            env:
+              VPN_TARGET_GATEWAY_IP: $(SECURE_REMOTE_GATEWAY_IP) # Loaded securely via variable groups
