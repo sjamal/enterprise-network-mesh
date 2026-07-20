@@ -57,3 +57,14 @@ To run non-interactive perimeters audits checking DNS status, certificate handsh
 # Trigger the automated boundary validation workbook via Ansible core
 ansible-playbook playbooks/verify_external_boundaries.yml
 ```
+
+## Related Enterprise Projects
+
+Part of the integrated enterprise automation ecosystem. Complementary projects:
+
+- **[hybrid-governance-automation](https://github.com/sjamal/hybrid-governance-automation)** — Change gating and compliance orchestration
+- **[enterprise-hybrid-pipelines](https://github.com/sjamal/enterprise-hybrid-pipelines)** — Post-provisioning configuration automation
+- **[enterprise-cert-cryptographer](https://github.com/sjamal/enterprise-cert-cryptographer)** — Certificate management and distribution
+- **[ansible](https://github.com/sjamal/ansible)** — Infrastructure provisioning playbooks
+- **[puppet-enterprise-profiles](https://github.com/sjamal/puppet-enterprise-profiles)** — Puppet configuration modules
+- **[puppet-sles-hardening](https://github.com/sjamal/puppet-sles-hardening)** — CIS hardening profiles
